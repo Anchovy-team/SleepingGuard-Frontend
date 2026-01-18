@@ -1,4 +1,5 @@
 import { Shield } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Navigation() {
   return (
@@ -8,9 +9,12 @@ export default function Navigation() {
           <Shield className="w-8 h-8 text-cyan-400" />
           <span className="text-xl font-bold text-white">SleepingGuard</span>
         </div>
-        <button className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
-          Contact Sales
-        </button>
+        <Link
+          href="/auth"
+          className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg transition-colors"
+        >
+          Sign In
+        </Link>
       </div>
     </nav>
   );

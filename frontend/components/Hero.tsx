@@ -1,4 +1,5 @@
 import { Shield, Lock, Server, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Hero() {
   return (
@@ -28,10 +29,13 @@ export default function Hero() {
         </p>
 
         {/* CTA */}
-        <button className="group inline-flex items-center gap-3 px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-cyan-900/50 hover:shadow-cyan-800/50">
-          <span>Notify Me</span>
+        <Link
+          href="/auth"
+          className="group inline-flex items-center gap-3 px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-cyan-900/50 hover:shadow-cyan-800/50"
+        >
+          <span>Get Started</span>
           <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-        </button>
+        </Link>
 
         {/* Trust Indicators */}
         <div className="mt-16 flex flex-wrap justify-center gap-8 text-slate-500 text-sm">

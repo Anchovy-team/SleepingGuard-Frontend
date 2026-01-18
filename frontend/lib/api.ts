@@ -1,13 +1,19 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
 export interface AuthRequest {
-  email: string;
+  login: string;
   password: string;
+  name?: string;
+  companyName?: string;
+  isLogin?: boolean;
 }
 
 export interface AuthResponse {
-  token: string;
-  email: string;
+  id: number;
+  login: string;
+  name: string;
+  companyName: string;
+  message: string;
 }
 
 export const authApi = {
@@ -49,10 +55,16 @@ export const authApi = {
   },
 
   getToken: () => localStorage.getItem('token'),
-  getEmail: () => localStorage.getItem('email'),
+  getUser: () => ({
+    login: localStorage.getItem('login'),
+    name: localStorage.getItem('name'),
+    companyName: localStorage.getItem('companyName'),
+  }),
 
-  setAuth: (token: string, email: string) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('email', email);
+  setAuth: (response: AuthResponse) => {
+    localStorage.setItem('token', response.id.toString());
+    localStorage.setItem('login', response.login);
+    localStorage.setItem('name', response.name);
+    localStorage.setItem('companyName', response.companyName);
   },
 };

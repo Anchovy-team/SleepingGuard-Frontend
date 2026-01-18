@@ -5,17 +5,23 @@ import { useRouter } from 'next/navigation';
 import { Shield, LogOut } from 'lucide-react';
 import { authApi } from '@/lib/api';
 
+interface UserData {
+  login: string | null;
+  name: string | null;
+  companyName: string | null;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userEmail = authApi.getEmail();
-    if (!userEmail) {
+    const userData = authApi.getUser();
+    if (!userData.login) {
       router.push('/auth');
     } else {
-      setEmail(userEmail);
+      setUser(userData as UserData);
       setLoading(false);
     }
   }, [router]);
@@ -42,7 +48,10 @@ export default function DashboardPage() {
             <span className="text-xl font-bold text-white">SleepingGuard</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-slate-400">{email}</span>
+            <div>
+              <p className="text-sm text-slate-400">{user?.name}</p>
+              <p className="text-xs text-slate-500">{user?.companyName}</p>
+            </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
@@ -56,9 +65,9 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-slate-900/50 backdrop-blur border border-slate-800 rounded-xl p-8">
-          <h1 className="text-3xl font-bold text-white mb-4">Welcome!</h1>
+          <h1 className="text-3xl font-bold text-white mb-4">Welcome, {user?.name}!</h1>
           <p className="text-slate-400 mb-8">
-            You are successfully logged in as {email}
+            Company: <span className="text-cyan-400 font-semibold">{user?.companyName}</span>
           </p>
 
           <div className="space-y-4">

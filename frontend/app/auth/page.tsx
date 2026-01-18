@@ -8,8 +8,10 @@ import { authApi } from '@/lib/api';
 export default function AuthPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,11 +21,18 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const response = isLogin
-        ? await authApi.login({ email, password })
-        : await authApi.register({ email, password });
+      const payload = {
+        login,
+        password,
+        isLogin,
+        ...((!isLogin) && { name, companyName }),
+      };
 
-      authApi.setAuth(response.token, response.email);
+      const response = await (isLogin
+        ? authApi.login({ login, password, isLogin: true })
+        : authApi.register({ login, password, name, companyName, isLogin: false }));
+
+      authApi.setAuth(response);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -41,22 +50,22 @@ export default function AuthPage() {
           <span className="text-2xl font-bold text-white">SleepingGuard</span>
         </div>
         <p className="text-slate-400">
-          {isLogin ? 'Welcome back' : 'Secure your infrastructure'}
+          {isLogin ? 'Welcome back' : 'Create your account'}
         </p>
       </div>
 
       {/* Form Card */}
       <div className="bg-slate-900/50 backdrop-blur border border-slate-800 rounded-xl p-8 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email/Login */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Email
             </label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
               placeholder="security@company.com"
               required
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
@@ -77,6 +86,40 @@ export default function AuthPage() {
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
             />
           </div>
+
+          {/* Name - Registration only */}
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                required
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
+              />
+            </div>
+          )}
+
+          {/* Company Name - Registration only */}
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Acme Corp"
+                required
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
+              />
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -111,8 +154,10 @@ export default function AuthPage() {
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
-              setEmail('');
+              setLogin('');
               setPassword('');
+              setName('');
+              setCompanyName('');
             }}
             className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
           >

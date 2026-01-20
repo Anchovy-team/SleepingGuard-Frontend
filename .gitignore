@@ -1,54 +1,18 @@
-﻿# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
+﻿# dependencies
+node_modules/
 
-# Build
-target/
-dist/
-build/
-*.o
-*.a
-*.so
+# Next.js
+.next/
+out/
 
-# Node & Frontend
-frontend/node_modules/
+# env
+.env
+.env.local
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnp
-.pnp.js
-.yarn/install-state.gz
-frontend/.next/
-out/
-next-env.d.ts
-*.tsbuildinfo
-.vercel
 
-# Java
-*.class
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-.gradle/
-
-# OS
+# OS / editor
 .DS_Store
-Thumbs.db
-*.pem
-
-# Database
-*.db
-*.sqlite
-*.h2.db
-
-# Environment & Config
-frontend/.env.local
-.env.*.local
-config.properties

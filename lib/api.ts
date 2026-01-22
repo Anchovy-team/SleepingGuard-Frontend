@@ -1,4 +1,5 @@
-export const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
 
 export interface AuthRequest {
   login: string;
@@ -15,33 +16,39 @@ export interface AuthResponse {
   message: string;
 }
 
-type ApiErrorBody =
-  | { message?: string; error?: string; details?: unknown }
-  | string
-  | null;
+type ApiErrorObject = { message?: string; error?: string; details?: unknown };
+type ApiErrorBody = ApiErrorObject | string | null;
 
-async function parseBody(res: Response): Promise<ApiErrorBody> {
+const isBrowser = () => typeof window !== 'undefined';
+
+async function parseBody(res: Response): Promise<unknown> {
   const text = await res.text();
   if (!text) return null;
 
   try {
     return JSON.parse(text);
   } catch {
-    return text;
+    return text; // plain text response
   }
 }
 
-function extractErrorMessage(body: ApiErrorBody, fallback: string): string {
+function extractErrorMessage(body: unknown, fallback: string): string {
   if (!body) return fallback;
   if (typeof body === 'string') return body;
-  return body.message || body.error || fallback;
+
+  if (typeof body === 'object') {
+    const b = body as ApiErrorObject;
+    return b.message || b.error || fallback;
+  }
+
+  return fallback;
 }
 
-async function postJson<T>(path: string, payload: unknown): Promise<T> {
+async function postJson<T>(path: string, payload?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: payload === undefined ? undefined : JSON.stringify(payload),
   });
 
   const body = await parseBody(res);
@@ -50,6 +57,7 @@ async function postJson<T>(path: string, payload: unknown): Promise<T> {
     throw new Error(extractErrorMessage(body, `Request failed (${res.status})`));
   }
 
+  // For successful responses we expect JSON object
   if (!body || typeof body !== 'object') {
     throw new Error(`Unexpected backend response: ${String(body)}`);
   }
@@ -64,6 +72,21 @@ const STORAGE_KEYS = {
   companyName: 'sg.companyName',
 } as const;
 
+function safeGet(key: string): string | null {
+  if (!isBrowser()) return null;
+  return localStorage.getItem(key);
+}
+
+function safeSet(key: string, value: string): void {
+  if (!isBrowser()) return;
+  localStorage.setItem(key, value);
+}
+
+function safeRemove(key: string): void {
+  if (!isBrowser()) return;
+  localStorage.removeItem(key);
+}
+
 export const authApi = {
   register: (credentials: AuthRequest) =>
     postJson<AuthResponse>('/auth/register', credentials),
@@ -73,34 +96,60 @@ export const authApi = {
 
   setAuth: (response: AuthResponse) => {
     if (!response?.userId) {
-      throw new Error(`Backend did not return userId: ${JSON.stringify(response)}`);
+      throw new Error(
+        `Backend did not return userId: ${JSON.stringify(response)}`
+      );
     }
+    if (!isBrowser()) return;
 
-    localStorage.setItem(STORAGE_KEYS.userId, String(response.userId));
-    localStorage.setItem(STORAGE_KEYS.login, response.login ?? '');
-    localStorage.setItem(STORAGE_KEYS.name, response.name ?? '');
-    localStorage.setItem(STORAGE_KEYS.companyName, response.companyName ?? '');
+    safeSet(STORAGE_KEYS.userId, String(response.userId));
+    safeSet(STORAGE_KEYS.login, response.login ?? '');
+    safeSet(STORAGE_KEYS.name, response.name ?? '');
+    safeSet(STORAGE_KEYS.companyName, response.companyName ?? '');
   },
 
   logout: () => {
-    localStorage.removeItem(STORAGE_KEYS.userId);
-    localStorage.removeItem(STORAGE_KEYS.login);
-    localStorage.removeItem(STORAGE_KEYS.name);
-    localStorage.removeItem(STORAGE_KEYS.companyName);
+    safeRemove(STORAGE_KEYS.userId);
+    safeRemove(STORAGE_KEYS.login);
+    safeRemove(STORAGE_KEYS.name);
+    safeRemove(STORAGE_KEYS.companyName);
   },
 
-  isAuthed: () => {
-    if (typeof window === 'undefined') return false;
-    return Boolean(localStorage.getItem(STORAGE_KEYS.userId));
-  },
+  isAuthed: () => Boolean(safeGet(STORAGE_KEYS.userId)),
 
-  getUser: () => {
-    if (typeof window === 'undefined') return null;
+  getUser: (): {
+    userId: number | null;
+    login: string | null;
+    name: string | null;
+    companyName: string | null;
+  } | null => {
+    const userIdRaw = safeGet(STORAGE_KEYS.userId);
+    if (!userIdRaw) return null;
+
+    const userIdNum = Number(userIdRaw);
     return {
-      userId: localStorage.getItem(STORAGE_KEYS.userId),
-      login: localStorage.getItem(STORAGE_KEYS.login),
-      name: localStorage.getItem(STORAGE_KEYS.name),
-      companyName: localStorage.getItem(STORAGE_KEYS.companyName),
+      userId: Number.isFinite(userIdNum) ? userIdNum : null,
+      login: safeGet(STORAGE_KEYS.login),
+      name: safeGet(STORAGE_KEYS.name),
+      companyName: safeGet(STORAGE_KEYS.companyName),
     };
   },
+};
+
+export type BillingPeriod = 'MONTHLY' | 'YEARLY';
+
+export interface OrderRequest {
+  userId: number;
+  subscriptionCount: number;
+  physicalKeyCount: number;
+}
+
+export interface OrderResponse {
+  message: string;
+  orderId?: number;
+}
+
+export const orderApi = {
+  create: (order: OrderRequest) =>
+    postJson<OrderResponse>('/orders', order),
 };

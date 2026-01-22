@@ -30,7 +30,7 @@ export default function Hero() {
 
         {/* CTA */}
         <Link
-          href="/auth"
+          href="/auth?mode=register"
           className="group inline-flex items-center gap-3 px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-cyan-900/50 hover:shadow-cyan-800/50"
         >
           <span>Get Started</span>

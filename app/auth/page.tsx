@@ -1,13 +1,22 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 
 type Mode = 'login' | 'register';
 
 export default function AuthPage() {
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const m = searchParams.get('mode');
+    if (m === 'register') setMode('register');
+    if (m === 'login') setMode('login');
+  }, [searchParams]);
+
 
   const [mode, setMode] = useState<Mode>('login');
 

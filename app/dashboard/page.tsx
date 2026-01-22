@@ -2,84 +2,60 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, LogOut } from 'lucide-react';
 import { authApi } from '@/lib/api';
-
-interface UserData {
-  login: string | null;
-  name: string | null;
-  companyName: string | null;
-}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<ReturnType<typeof authApi.getUser> | null>(null);
 
   useEffect(() => {
-    const userData = authApi.getUser();
-    if (!userData.login) {
+    if (!authApi.isAuthed()) {
       router.push('/auth');
-    } else {
-      setUser(userData as UserData);
-      setLoading(false);
+      return;
     }
+    setUser(authApi.getUser());
   }, [router]);
 
-  const handleLogout = () => {
+  const logout = () => {
     authApi.logout();
-    router.push('/');
+    router.push('/auth');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <p className="text-slate-400">Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950">
-      <nav className="bg-slate-900 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-cyan-400" />
-            <span className="text-xl font-bold text-white">SleepingGuard</span>
-          </div>
-          <div className="flex items-center gap-4">
+    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <button
+            onClick={logout}
+            className="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-2 text-slate-200 hover:bg-slate-900"
+          >
+            Log out
+          </button>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+          <h2 className="text-xl font-semibold">Your profile</h2>
+          <div className="mt-4 space-y-2 text-slate-200">
             <div>
-              <p className="text-sm text-slate-400">{user?.name}</p>
-              <p className="text-xs text-slate-500">{user?.companyName}</p>
+              <span className="text-slate-400">User ID: </span>
+              {user?.userId ?? '—'}
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-slate-900/50 backdrop-blur border border-slate-800 rounded-xl p-8">
-          <h1 className="text-3xl font-bold text-white mb-4">Welcome, {user?.name}!</h1>
-          <p className="text-slate-400 mb-8">
-            Company: <span className="text-cyan-400 font-semibold">{user?.companyName}</span>
-          </p>
-
-          <div className="space-y-4">
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-              <h2 className="text-lg font-semibold text-white mb-2">Dashboard</h2>
-              <p className="text-slate-400">
-                Your secure dashboard is ready. More features coming soon.
-              </p>
+            <div>
+              <span className="text-slate-400">Login: </span>
+              {user?.login ?? '—'}
+            </div>
+            <div>
+              <span className="text-slate-400">Name: </span>
+              {user?.name ?? '—'}
+            </div>
+            <div>
+              <span className="text-slate-400">Company: </span>
+              {user?.companyName ?? '—'}
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

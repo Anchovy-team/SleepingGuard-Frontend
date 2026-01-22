@@ -1,180 +1,189 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, ArrowRight } from 'lucide-react';
 import { authApi } from '@/lib/api';
+
+type Mode = 'login' | 'register';
 
 export default function AuthPage() {
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(true);
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const [mode, setMode] = useState<Mode>('login');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const canSubmit = useMemo(() => {
+    if (!email.includes('@')) return false;
+    if (!password) return false;
+    if (mode === 'register') {
+      if (!fullName.trim()) return false;
+      if (!companyName.trim()) return false;
+    }
+    return true;
+  }, [email, password, fullName, companyName, mode]);
+
+  const submit = async () => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
     setLoading(true);
 
     try {
-      const payload = {
-        login,
-        password,
-        isLogin,
-        ...((!isLogin) && { name, companyName }),
-      };
+      const payload =
+        mode === 'login'
+          ? { login: email, password }
+          : { login: email, password, name: fullName, companyName };
 
-      const response = await (isLogin
-        ? authApi.login({ login, password, isLogin: true })
-        : authApi.register({ login, password, name, companyName, isLogin: false }));
+      const resp =
+        mode === 'login'
+          ? await authApi.login(payload)
+          : await authApi.register(payload);
 
-      authApi.setAuth(response);
+      authApi.setAuth(resp);
+
+      setSuccessMsg(mode === 'login' ? 'Authentication succeeded' : 'Account created');
+
       router.push('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (e: any) {
+      setErrorMsg(e?.message || 'Неизвестная ошибка');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md">
-      {/* Logo */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Shield className="w-8 h-8 text-cyan-400" />
-          <span className="text-2xl font-bold text-white">SleepingGuard</span>
+    <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+      <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-white">
+            {mode === 'login' ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="mt-2 text-slate-400">
+            {mode === 'login'
+              ? 'Sign in to access your dashboard'
+              : 'Register to access SleepingGuard'}
+          </p>
         </div>
-        <p className="text-slate-400">
-          {isLogin ? 'Welcome back' : 'Create your account'}
-        </p>
-      </div>
 
-      {/* Form Card */}
-      <div className="bg-slate-900/50 backdrop-blur border border-slate-800 rounded-xl p-8 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email/Login */}
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Email
-            </label>
+            <label className="block text-sm text-slate-300 mb-1">Email</label>
             <input
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 text-white outline-none focus:border-cyan-600"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="security@yourcompany.com"
               type="email"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              placeholder="security@company.com"
-              required
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
+              autoComplete="email"
             />
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Password
-            </label>
+            <label className="block text-sm text-slate-300 mb-1">Password</label>
             <input
-              type="password"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 text-white outline-none focus:border-cyan-600"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              required
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              onKeyDown={(e) => e.key === 'Enter' && canSubmit && submit()}
             />
           </div>
 
-          {/* Name - Registration only */}
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
-                required
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
-              />
+          {mode === 'register' && (
+            <>
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Full Name</label>
+                <input
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 text-white outline-none focus:border-cyan-600"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  type="text"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Company Name</label>
+                <input
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 text-white outline-none focus:border-cyan-600"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Your Company"
+                  type="text"
+                />
+              </div>
+            </>
+          )}
+
+          {errorMsg && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200">
+              {errorMsg}
             </div>
           )}
 
-          {/* Company Name - Registration only */}
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Company Name
-              </label>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Acme Corp"
-                required
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/20 transition-all"
-              />
+          {successMsg && (
+            <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-200">
+              {successMsg}
             </div>
           )}
 
-          {/* Error */}
-          {error && (
-            <div className="p-4 bg-red-600/10 border border-red-600/20 rounded-lg">
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-6 py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-cyan-900/50 hover:shadow-cyan-800/50 disabled:shadow-none flex items-center justify-center gap-2"
+            onClick={submit}
+            disabled={!canSubmit || loading}
+            className="mt-2 w-full rounded-lg bg-cyan-600 px-4 py-3 font-semibold text-white transition hover:bg-cyan-500 disabled:opacity-60"
           >
-            {loading ? (
-              'Processing...'
+            {loading ? 'Please wait…' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
+          </button>
+
+          <div className="pt-2 text-center text-sm text-slate-400">
+            {mode === 'login' ? (
+              <>
+                Don&apos;t have an account?{' '}
+                <button
+                  className="text-cyan-400 hover:text-cyan-300"
+                  onClick={() => {
+                    setMode('register');
+                    setErrorMsg(null);
+                    setSuccessMsg(null);
+                  }}
+                >
+                  Sign up
+                </button>
+              </>
             ) : (
               <>
-                {isLogin ? 'Sign In' : 'Create Account'}
-                <ArrowRight className="w-4 h-4" />
+                Already have an account?{' '}
+                <button
+                  className="text-cyan-400 hover:text-cyan-300"
+                  onClick={() => {
+                    setMode('login');
+                    setErrorMsg(null);
+                    setSuccessMsg(null);
+                  }}
+                >
+                  Sign in
+                </button>
               </>
             )}
-          </button>
-        </form>
-      </div>
+          </div>
 
-      {/* Toggle Auth Mode */}
-      <div className="text-center">
-        <p className="text-slate-400">
-          {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-          <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-              setLogin('');
-              setPassword('');
-              setName('');
-              setCompanyName('');
-            }}
-            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
-          >
-            {isLogin ? 'Sign up' : 'Sign in'}
-          </button>
-        </p>
+          <div className="text-center text-sm">
+            <a className="text-slate-500 hover:text-slate-300" href="/">
+              ← Back to home
+            </a>
+          </div>
+        </div>
       </div>
-
-      {/* Back to Home */}
-      <div className="mt-8 text-center">
-        <a
-          href="/"
-          className="text-slate-400 hover:text-slate-300 text-sm transition-colors"
-        >
-          ← Back to home
-        </a>
-      </div>
-    </div>
+    </main>
   );
 }

@@ -1,22 +1,21 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 
 type Mode = 'login' | 'register';
 
+function getModeFromLocation(): Mode | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const m = params.get('mode');
+  return m === 'register' ? 'register' : m === 'login' ? 'login' : null;
+}
+
 export default function AuthPage() {
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const m = searchParams.get('mode');
-    if (m === 'register') setMode('register');
-    if (m === 'login') setMode('login');
-  }, [searchParams]);
-
+  const pathname = usePathname();
 
   const [mode, setMode] = useState<Mode>('login');
 
@@ -29,6 +28,19 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Read mode from URL on client (no useSearchParams -> no Suspense build error on Netlify)
+  useEffect(() => {
+    const m = getModeFromLocation();
+    if (m) setMode(m);
+  }, []);
+
+  const setModeAndUrl = (m: Mode) => {
+    setMode(m);
+    router.replace(`${pathname}?mode=${m}`);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
 
   const canSubmit = useMemo(() => {
     if (!email.includes('@')) return false;
@@ -59,10 +71,9 @@ export default function AuthPage() {
       authApi.setAuth(resp);
 
       setSuccessMsg(mode === 'login' ? 'Authentication succeeded' : 'Account created');
-
       router.push('/dashboard');
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'unknown';
+      const message = e instanceof Error ? e.message : 'Unknown error';
       setErrorMsg(message);
     } finally {
       setLoading(false);
@@ -161,11 +172,7 @@ export default function AuthPage() {
                 Don&apos;t have an account?{' '}
                 <button
                   className="text-cyan-400 hover:text-cyan-300"
-                  onClick={() => {
-                    setMode('register');
-                    setErrorMsg(null);
-                    setSuccessMsg(null);
-                  }}
+                  onClick={() => setModeAndUrl('register')}
                 >
                   Sign up
                 </button>
@@ -175,11 +182,7 @@ export default function AuthPage() {
                 Already have an account?{' '}
                 <button
                   className="text-cyan-400 hover:text-cyan-300"
-                  onClick={() => {
-                    setMode('login');
-                    setErrorMsg(null);
-                    setSuccessMsg(null);
-                  }}
+                  onClick={() => setModeAndUrl('login')}
                 >
                   Sign in
                 </button>

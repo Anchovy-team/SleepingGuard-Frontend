@@ -1,4 +1,4 @@
-export const API_BASE_URL ='http://localhost:8080/api';
+export const API_BASE_URL = 'http://localhost:8080/api';
 
 export interface AuthRequest {
   login: string;
@@ -16,7 +16,7 @@ export interface AuthResponse {
 }
 
 type ApiErrorBody =
-  | { message?: string; error?: string; details?: any }
+  | { message?: string; error?: string; details?: unknown }
   | string
   | null;
 
@@ -37,7 +37,7 @@ function extractErrorMessage(body: ApiErrorBody, fallback: string): string {
   return body.message || body.error || fallback;
 }
 
-async function postJson<T>(path: string, payload: any): Promise<T> {
+async function postJson<T>(path: string, payload: unknown): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

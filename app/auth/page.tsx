@@ -52,8 +52,9 @@ export default function AuthPage() {
       setSuccessMsg(mode === 'login' ? 'Authentication succeeded' : 'Account created');
 
       router.push('/dashboard');
-    } catch (e: any) {
-      setErrorMsg(e?.message || 'Неизвестная ошибка');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'unknown';
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }

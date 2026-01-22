@@ -17,7 +17,6 @@ export interface AuthResponse {
 }
 
 type ApiErrorObject = { message?: string; error?: string; details?: unknown };
-type ApiErrorBody = ApiErrorObject | string | null;
 
 const isBrowser = () => typeof window !== 'undefined';
 

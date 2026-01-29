@@ -26,7 +26,7 @@ async function parseBody(res: Response): Promise<unknown> {
   try {
     return JSON.parse(text);
   } catch {
-    return text; // plain text response
+    return text;
   }
 }
 
@@ -55,7 +55,6 @@ async function postJson<T>(path: string, payload?: unknown): Promise<T> {
     throw new Error(extractErrorMessage(body, `Request failed (${res.status})`));
   }
 
-  // For successful responses we expect JSON object
   if (!body || typeof body !== 'object') {
     throw new Error(`Unexpected backend response: ${String(body)}`);
   }

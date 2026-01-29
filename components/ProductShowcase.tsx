@@ -10,7 +10,7 @@ export default function ProductShowcase() {
             Dual-Layer Defense System
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Software intelligence meets hardware security. A unified solution engineered for breach-resistant credential management.
+            Software intelligence meets hardware security.
           </p>
         </div>
 

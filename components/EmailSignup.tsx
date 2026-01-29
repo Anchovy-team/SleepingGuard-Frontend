@@ -9,7 +9,6 @@ export default function EmailSignup() {
 
   const handleSubmit = () => {
     if (email && email.includes('@')) {
-      // Placeholder - would integrate with backend
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
